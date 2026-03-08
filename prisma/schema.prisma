@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  name           String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  collection     UserCollection[]
+  conversations  AiConversation[]
+
+  @@map("users")
+}
+
+model Set {
+  id           String   @id
+  name         String
+  series       String
+  printedTotal Int      @default(0) @map("printed_total")
+  total        Int      @default(0)
+  releaseDate  String?  @map("release_date")
+  symbolUrl    String?  @map("symbol_url")
+  logoUrl      String?  @map("logo_url")
+  language     String   @default("en")
+  syncedAt     DateTime @default(now()) @map("synced_at")
+  cards        Card[]
+
+  @@map("sets")
+}
+
+model Card {
+  id            String    @id
+  setId         String    @map("set_id")
+  name          String
+  supertype     String    @default("Pokémon")
+  subtypes      Json?
+  hp            String?
+  types         Json?
+  rarity        String?
+  imageSmall    String    @map("image_small")
+  imageLarge    String    @map("image_large")
+  number        String
+  artist        String?
+  tcgplayerUrl  String?   @map("tcgplayer_url")
+  attacks       Json?
+  abilities     Json?
+  syncedAt      DateTime  @default(now()) @map("synced_at")
+
+  set           Set       @relation(fields: [setId], references: [id], onDelete: Cascade)
+  prices        CardPrice[]
+  priceHistory  PriceHistory[]
+  gradedPrices  GradedPrice[]
+  collection    UserCollection[]
+
+  @@index([setId])
+  @@index([name])
+  @@index([rarity])
+  @@map("cards")
+}
+
+model CardPrice {
+  id        String   @id @default(cuid())
+  cardId    String   @map("card_id")
+  variant   String   @default("normal")
+  low       Float?
+  mid       Float?
+  high      Float?
+  market    Float?
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, variant])
+  @@index([cardId])
+  @@map("card_prices")
+}
+
+model PriceHistory {
+  id           String   @id @default(cuid())
+  cardId       String   @map("card_id")
+  variant      String   @default("normal")
+  marketPrice  Float    @map("market_price")
+  recordedDate DateTime @map("recorded_date") @db.Date
+
+  card         Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, variant, recordedDate])
+  @@index([cardId, recordedDate])
+  @@map("price_history")
+}
+
+model UserCollection {
+  id              String    @id @default(cuid())
+  userId          String    @map("user_id")
+  cardId          String    @map("card_id")
+  quantity        Int       @default(1)
+  condition       String    @default("Near Mint")
+  isGraded        Boolean   @default(false) @map("is_graded")
+  gradingCompany  String?   @map("grading_company")
+  grade           String?
+  variant         String    @default("normal")
+  purchasePrice   Float?    @map("purchase_price")
+  purchaseDate    DateTime? @map("purchase_date") @db.Date
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card            Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([cardId])
+  @@map("user_collection")
+}
+
+model GradedPrice {
+  id              String    @id @default(cuid())
+  cardId          String    @map("card_id")
+  gradingCompany  String    @map("grading_company")
+  grade           String
+  price           Float?
+  lastSoldDate    DateTime? @map("last_sold_date") @db.Date
+  source          String?
+  updatedAt       DateTime  @default(now()) @map("updated_at")
+
+  card            Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, gradingCompany, grade])
+  @@index([cardId])
+  @@map("graded_prices")
+}
+
+model AiConversation {
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+  title     String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  messages  AiMessage[]
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id              String         @id @default(cuid())
+  conversationId  String         @map("conversation_id")
+  role            String
+  content         String
+  toolCalls       Json?          @map("tool_calls")
+  toolResults     Json?          @map("tool_results")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  conversation    AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
