@@ -23,7 +23,7 @@ function delay(ms: number) {
 async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(url, { headers })
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(30000) })
       if (res.ok) return res
       if (res.status === 429 || res.status === 504 || res.status === 503) {
         const waitTime = (i + 1) * 5000
@@ -106,15 +106,15 @@ async function syncSetPrices(setId: string): Promise<{ updated: number; errors: 
 }
 
 async function main() {
-  // Check API availability
+  // Check API availability with generous timeout
   try {
-    const res = await fetch(`${API_BASE}/sets?pageSize=1`, { headers, signal: AbortSignal.timeout(10000) })
+    const res = await fetchWithRetry(`${API_BASE}/sets?pageSize=1`)
     if (!res.ok) {
       console.error(`Pokemon TCG API unavailable (HTTP ${res.status}). Try again later.`)
       process.exit(1)
     }
-  } catch {
-    console.error('Pokemon TCG API unreachable. Try again later.')
+  } catch (err: any) {
+    console.error(`Pokemon TCG API unreachable: ${err.message}. Try again later.`)
     process.exit(1)
   }
 
