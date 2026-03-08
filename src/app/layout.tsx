@@ -25,7 +25,8 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "PokeVault — The Collector's Platform",
-  description: "Track your Pokemon card collection, browse sets, monitor market prices, and get grading intelligence.",
+  description:
+    "Track your Pokemon card collection, browse sets, monitor market prices, and get grading intelligence.",
 };
 
 export default function RootLayout({

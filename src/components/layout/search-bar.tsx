@@ -17,7 +17,7 @@ export function SearchBar({ size = 'default' }: { size?: 'default' | 'lg' }) {
     inputRef.current?.blur()
   }
 
-  // Keyboard shortcut
+  // "/" keyboard shortcut
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
@@ -35,9 +35,30 @@ export function SearchBar({ size = 'default' }: { size?: 'default' | 'lg' }) {
 
   return (
     <form onSubmit={handleSearch} className="relative w-full">
-      <div className={`flex items-center surface-2 rounded-lg transition-all ${focused ? 'ring-1 ring-[var(--brand)] border-[var(--brand)]' : ''}`}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`${isLg ? 'ml-4' : 'ml-3'} text-[var(--text-tertiary)] shrink-0`}>
-          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+      <div
+        className={`flex items-center rounded-xl transition-all duration-200 ${
+          isLg
+            ? 'surface-1 border-[var(--border-default)]'
+            : 'surface-2'
+        } ${
+          focused
+            ? 'ring-2 ring-[var(--brand)] border-[var(--brand)] shadow-[0_0_0_4px_var(--brand-subtle)]'
+            : ''
+        }`}
+      >
+        <svg
+          width={isLg ? 18 : 15}
+          height={isLg ? 18 : 15}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`${isLg ? 'ml-5' : 'ml-3'} shrink-0 transition-colors ${
+            focused ? 'text-[var(--brand)]' : 'text-[var(--text-tertiary)]'
+          }`}
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
         </svg>
         <input
           ref={inputRef}
@@ -47,15 +68,26 @@ export function SearchBar({ size = 'default' }: { size?: 'default' | 'lg' }) {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder="Search cards, sets, Pokemon..."
-          className={`flex-1 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none ${isLg ? 'px-3 py-3 text-sm' : 'px-2.5 py-2 text-[13px]'}`}
+          className={`flex-1 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none ${
+            isLg ? 'px-3 py-4 text-[15px]' : 'px-2.5 py-2 text-[13px]'
+          }`}
         />
         {!focused && !query && (
-          <kbd className={`${isLg ? 'mr-3' : 'mr-2.5'} hidden sm:inline px-1.5 py-0.5 text-[10px] text-[var(--text-tertiary)] bg-[var(--surface-1)] border border-[var(--border-default)] rounded font-mono`}>
+          <kbd
+            className={`${
+              isLg ? 'mr-4' : 'mr-2.5'
+            } hidden sm:inline-flex items-center justify-center w-6 h-6 text-[11px] text-[var(--text-tertiary)] bg-[var(--surface-2)] border border-[var(--border-default)] rounded-md font-mono`}
+          >
             /
           </kbd>
         )}
         {query && (
-          <button type="submit" className={`${isLg ? 'mr-2' : 'mr-1.5'} px-3 py-1 text-[11px] font-medium text-white bg-[var(--brand)] rounded-md hover:opacity-90 transition-opacity`}>
+          <button
+            type="submit"
+            className={`${
+              isLg ? 'mr-3 px-5 py-2' : 'mr-2 px-3 py-1'
+            } text-[12px] font-semibold text-white bg-[var(--brand)] rounded-lg hover:bg-[var(--brand-dim)] transition-colors`}
+          >
             Search
           </button>
         )}

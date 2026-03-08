@@ -21,9 +21,9 @@ export default async function SetsPage({ searchParams }: SetsPageProps) {
     distinct: ['series'],
     orderBy: { series: 'asc' },
   })
-  const seriesList = seriesListRaw.map(s => s.series)
+  const seriesList = seriesListRaw.map((s) => s.series)
 
-  const where: any = {}
+  const where: Record<string, unknown> = {}
   if (series) where.series = series
   if (query) where.name = { contains: query, mode: 'insensitive' }
 
@@ -39,7 +39,7 @@ export default async function SetsPage({ searchParams }: SetsPageProps) {
 
   const totalPages = Math.ceil(count / pageSize)
 
-  const sets = setsRaw.map(s => ({
+  const sets = setsRaw.map((s) => ({
     id: s.id,
     name: s.name,
     series: s.series,
@@ -53,20 +53,39 @@ export default async function SetsPage({ searchParams }: SetsPageProps) {
   }))
 
   return (
-    <div className="container py-8">
-      <div className="flex items-end justify-between mb-6">
-        <div>
-          <h1 className="text-display-lg">Sets</h1>
-          <p className="text-[13px] text-[var(--text-secondary)] mt-1">{count} sets across every generation</p>
+    <div className="animate-in">
+      {/* Page header */}
+      <div className="container py-8 pb-0">
+        <span className="text-eyebrow brand-text">EXPLORE</span>
+        <h1 className="text-display-xl mt-1">Card Sets</h1>
+        <p className="text-[14px] text-[var(--text-secondary)] mt-2">
+          {count} sets across every generation
+        </p>
+      </div>
+
+      {/* Sticky filter bar */}
+      <div className="sticky top-12 z-20 mt-6">
+        <div
+          className="bg-[var(--surface-0)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)]"
+          style={{
+            borderImage: 'linear-gradient(to right, transparent, var(--border-default), transparent) 1',
+          }}
+        >
+          <div className="container py-3">
+            <SetFilter
+              seriesList={seriesList}
+              currentSeries={series}
+              currentQuery={query}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="sticky top-12 z-10 bg-[var(--surface-0)] py-3 -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--border-subtle)] mb-6">
-        <SetFilter seriesList={seriesList} currentSeries={series} currentQuery={query} />
+      {/* Set grid + pagination */}
+      <div className="container py-8">
+        <SetGrid sets={sets} />
+        <Pagination currentPage={page} totalPages={totalPages} />
       </div>
-
-      <SetGrid sets={sets} />
-      <Pagination currentPage={page} totalPages={totalPages} />
     </div>
   )
 }
