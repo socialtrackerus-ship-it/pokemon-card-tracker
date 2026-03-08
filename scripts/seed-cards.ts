@@ -178,8 +178,41 @@ async function seedCards() {
     return count > 0 && count < s.total
   })
 
-  const toSeed = [...partial, ...unseeded]
-  console.log(`${allSets.length} total sets, ${allSets.length - toSeed.length} fully seeded, ${toSeed.length} to seed\n`)
+  // Check for sets with cards but no prices (need re-sync from API)
+  const priceCheck = await prisma.cardPrice.groupBy({
+    by: ['cardId'],
+    where: { source: 'tcgplayer' },
+  })
+  const cardsWithPrices = new Set(priceCheck.map(p => p.cardId))
+
+  const noPrices = allSets.filter(s => {
+    const cardCount = seededSetMap.get(s.id) || 0
+    if (cardCount === 0 || s.language !== 'en') return false
+    // Already in partial/unseeded
+    if (!seededSetMap.has(s.id) || cardCount < s.total) return false
+    // Check if any cards in this set have prices — we'll re-sync these via API
+    return true
+  })
+
+  // Filter noPrices to only those actually missing prices (sample check)
+  const needsPriceSync: typeof allSets = []
+  for (const s of noPrices) {
+    const pCount = await prisma.cardPrice.count({
+      where: { card: { setId: s.id }, source: 'tcgplayer' },
+      take: 1,
+    })
+    if (pCount === 0) needsPriceSync.push(s)
+  }
+
+  const resync = process.argv.includes('--resync-prices')
+  const toSeed = resync ? [...partial, ...unseeded, ...needsPriceSync] : [...partial, ...unseeded]
+
+  console.log(`${allSets.length} total sets, ${allSets.length - unseeded.length - partial.length} fully seeded`)
+  console.log(`${unseeded.length} unseeded, ${partial.length} partial, ${needsPriceSync.length} missing prices`)
+  if (needsPriceSync.length > 0 && !resync) {
+    console.log(`  Tip: run with --resync-prices to re-fetch cards with prices from the API`)
+  }
+  console.log(`${toSeed.length} sets to process\n`)
 
   if (toSeed.length === 0) {
     console.log('All sets already seeded!')
@@ -199,10 +232,9 @@ async function seedCards() {
     try {
       let cards: any[] | null = null
 
-      if (set.language === 'ja') {
-        // Japanese cards are not available via the Pokemon TCG API or GitHub repo.
-        // They need to be imported from a separate data source.
-        console.log(`  Skipped — Japanese cards require manual import\n`)
+      if (set.language !== 'en') {
+        // Non-English cards are not available via the Pokemon TCG API or GitHub repo.
+        console.log(`  Skipped — ${set.language.toUpperCase()} cards not available from API\n`)
         skipped++
         continue
       } else if (useAPI) {

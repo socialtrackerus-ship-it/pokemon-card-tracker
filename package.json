@@ -12,6 +12,7 @@
     "sync:ebay": "npx tsx scripts/sync-ebay-prices.ts",
     "sync:graded": "npx tsx scripts/sync-graded-prices.ts",
     "sync:sealed": "npx tsx scripts/sync-sealed-prices.ts",
+    "sync:tcgplayer": "npx tsx scripts/sync-tcgplayer-prices.ts",
     "seed:all": "npx tsx scripts/seed-sets.ts && npx tsx scripts/seed-cards.ts"
   },
   "dependencies": {

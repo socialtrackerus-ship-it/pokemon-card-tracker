@@ -1,17 +1,63 @@
 import { prisma } from '@/lib/db'
 import { CardGrid } from '@/components/cards/card-grid'
 import { Pagination } from '@/components/pagination'
+import { CardSortSelect } from '@/components/sets/card-sort-select'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
 interface SetDetailPageProps {
   params: Promise<{ setId: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; sort?: string }>
 }
+
+const RARITY_CASE = Prisma.sql`
+  CASE rarity
+    WHEN 'Hyper Rare' THEN 1
+    WHEN 'Mega Hyper Rare' THEN 2
+    WHEN 'Special Illustration Rare' THEN 3
+    WHEN 'Illustration Rare' THEN 4
+    WHEN 'Shiny Ultra Rare' THEN 5
+    WHEN 'Ultra Rare' THEN 6
+    WHEN 'Rare Secret' THEN 7
+    WHEN 'Rare Rainbow' THEN 8
+    WHEN 'ACE SPEC Rare' THEN 9
+    WHEN 'Rare Shiny GX' THEN 10
+    WHEN 'Rare Shining' THEN 11
+    WHEN 'Amazing Rare' THEN 12
+    WHEN 'Radiant Rare' THEN 13
+    WHEN 'LEGEND' THEN 14
+    WHEN 'Rare Ultra' THEN 15
+    WHEN 'Rare Holo VSTAR' THEN 16
+    WHEN 'Rare Holo VMAX' THEN 17
+    WHEN 'Rare Holo V' THEN 18
+    WHEN 'Rare Holo GX' THEN 19
+    WHEN 'Rare Holo EX' THEN 20
+    WHEN 'Rare Holo LV.X' THEN 21
+    WHEN 'MEGA_ATTACK_RARE' THEN 22
+    WHEN 'Shiny Rare' THEN 23
+    WHEN 'Double Rare' THEN 24
+    WHEN 'Rare Shiny' THEN 25
+    WHEN 'Rare Prime' THEN 26
+    WHEN 'Rare Holo Star' THEN 27
+    WHEN 'Rare BREAK' THEN 28
+    WHEN 'Rare Prism Star' THEN 29
+    WHEN 'Rare ACE' THEN 30
+    WHEN 'Classic Collection' THEN 31
+    WHEN 'Trainer Gallery Rare Holo' THEN 32
+    WHEN 'Black White Rare' THEN 33
+    WHEN 'Rare Holo' THEN 34
+    WHEN 'Rare' THEN 35
+    WHEN 'Promo' THEN 36
+    WHEN 'Uncommon' THEN 37
+    WHEN 'Common' THEN 38
+    ELSE 39
+  END
+`
 
 export default async function SetDetailPage({ params, searchParams }: SetDetailPageProps) {
   const { setId } = await params
@@ -22,56 +68,53 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
   const set = await prisma.set.findUnique({ where: { id: setId } })
   if (!set) notFound()
 
-  // Fetch card IDs in rarity order using raw SQL, then load full cards
-  const cardIdsRaw: { id: string }[] = await prisma.$queryRaw`
-    SELECT id FROM cards
-    WHERE set_id = ${setId}
-    ORDER BY
-      CASE rarity
-        WHEN 'Hyper Rare' THEN 1
-        WHEN 'Mega Hyper Rare' THEN 2
-        WHEN 'Special Illustration Rare' THEN 3
-        WHEN 'Illustration Rare' THEN 4
-        WHEN 'Shiny Ultra Rare' THEN 5
-        WHEN 'Ultra Rare' THEN 6
-        WHEN 'Rare Secret' THEN 7
-        WHEN 'Rare Rainbow' THEN 8
-        WHEN 'ACE SPEC Rare' THEN 9
-        WHEN 'Rare Shiny GX' THEN 10
-        WHEN 'Rare Shining' THEN 11
-        WHEN 'Amazing Rare' THEN 12
-        WHEN 'Radiant Rare' THEN 13
-        WHEN 'LEGEND' THEN 14
-        WHEN 'Rare Ultra' THEN 15
-        WHEN 'Rare Holo VSTAR' THEN 16
-        WHEN 'Rare Holo VMAX' THEN 17
-        WHEN 'Rare Holo V' THEN 18
-        WHEN 'Rare Holo GX' THEN 19
-        WHEN 'Rare Holo EX' THEN 20
-        WHEN 'Rare Holo LV.X' THEN 21
-        WHEN 'MEGA_ATTACK_RARE' THEN 22
-        WHEN 'Shiny Rare' THEN 23
-        WHEN 'Double Rare' THEN 24
-        WHEN 'Rare Shiny' THEN 25
-        WHEN 'Rare Prime' THEN 26
-        WHEN 'Rare Holo Star' THEN 27
-        WHEN 'Rare BREAK' THEN 28
-        WHEN 'Rare Prism Star' THEN 29
-        WHEN 'Rare ACE' THEN 30
-        WHEN 'Classic Collection' THEN 31
-        WHEN 'Trainer Gallery Rare Holo' THEN 32
-        WHEN 'Black White Rare' THEN 33
-        WHEN 'Rare Holo' THEN 34
-        WHEN 'Rare' THEN 35
-        WHEN 'Promo' THEN 36
-        WHEN 'Uncommon' THEN 37
-        WHEN 'Common' THEN 38
-        ELSE 39
-      END,
-      number ASC
-    OFFSET ${(page - 1) * pageSize}
-    LIMIT ${pageSize}
-  `
+  // Determine default sort: price if prices exist, else rarity
+  const requestedSort = sp.sort
+  let sort = requestedSort || 'price'
+
+  // If defaulting to price, check if this set has any prices
+  if (!requestedSort) {
+    const hasPrices = await prisma.cardPrice.count({
+      where: { card: { setId }, market: { not: null } },
+      take: 1,
+    })
+    if (hasPrices === 0) sort = 'rarity'
+  }
+
+  // Build the sorted card ID query
+  let cardIdsRaw: { id: string }[]
+
+  if (sort === 'price') {
+    // Sort by highest market price descending, cards without prices last
+    cardIdsRaw = await prisma.$queryRaw`
+      SELECT c.id
+      FROM cards c
+      LEFT JOIN card_prices cp ON cp.card_id = c.id AND cp.market IS NOT NULL
+      WHERE c.set_id = ${setId}
+      GROUP BY c.id, c.rarity, c.number
+      ORDER BY MAX(cp.market) DESC NULLS LAST, ${RARITY_CASE}, c.number ASC
+      OFFSET ${(page - 1) * pageSize}
+      LIMIT ${pageSize}
+    `
+  } else if (sort === 'rarity') {
+    cardIdsRaw = await prisma.$queryRaw`
+      SELECT id FROM cards
+      WHERE set_id = ${setId}
+      ORDER BY ${RARITY_CASE}, number ASC
+      OFFSET ${(page - 1) * pageSize}
+      LIMIT ${pageSize}
+    `
+  } else {
+    // number
+    cardIdsRaw = await prisma.$queryRaw`
+      SELECT id FROM cards
+      WHERE set_id = ${setId}
+      ORDER BY number ASC
+      OFFSET ${(page - 1) * pageSize}
+      LIMIT ${pageSize}
+    `
+  }
+
   const pageCardIds = cardIdsRaw.map(r => r.id)
 
   const [cardsRaw, count, chaseCards, sealedProducts] = await Promise.all([
@@ -94,7 +137,7 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
 
   const totalPages = Math.ceil(count / pageSize)
 
-  // Preserve rarity sort order from raw query
+  // Preserve sort order from raw query
   const cardMap = new Map(cardsRaw.map(c => [c.id, c]))
   const cardsSorted = pageCardIds.map(id => cardMap.get(id)!).filter(Boolean)
 
@@ -281,6 +324,7 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
             <span className="font-semibold text-[var(--text-primary)]">{count}</span>{' '}
             cards
           </p>
+          <CardSortSelect currentSort={sort} />
         </div>
 
         <CardGrid cards={cards} />
