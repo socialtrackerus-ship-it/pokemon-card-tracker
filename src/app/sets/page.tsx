@@ -53,22 +53,19 @@ export default async function SetsPage({ searchParams }: SetsPageProps) {
   }))
 
   return (
-    <div className="container py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          Pokemon TCG <span className="text-gradient">Sets</span>
-        </h1>
-        <p className="text-muted-foreground mt-1.5 text-sm">
-          Browse all {count} sets across every generation
-        </p>
+    <div className="container py-8">
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <h1 className="text-display-lg">Sets</h1>
+          <p className="text-[13px] text-[var(--text-secondary)] mt-1">{count} sets across every generation</p>
+        </div>
       </div>
 
-      <SetFilter seriesList={seriesList} currentSeries={series} currentQuery={query} />
-
-      <div className="mt-8">
-        <SetGrid sets={sets} />
+      <div className="sticky top-12 z-10 bg-[var(--surface-0)] py-3 -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[var(--border-subtle)] mb-6">
+        <SetFilter seriesList={seriesList} currentSeries={series} currentQuery={query} />
       </div>
 
+      <SetGrid sets={sets} />
       <Pagination currentPage={page} totalPages={totalPages} />
     </div>
   )

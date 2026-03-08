@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db'
 import { CardGrid } from '@/components/cards/card-grid'
 import { Pagination } from '@/components/pagination'
-import { Badge } from '@/components/ui/badge'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -60,41 +59,35 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
   }))
 
   return (
-    <div className="container py-10">
+    <div className="container py-8">
+      {/* Breadcrumb */}
+      <Link href="/sets" className="inline-flex items-center gap-1 text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors mb-4">
+        ← All Sets
+      </Link>
+
       {/* Set header */}
-      <div className="relative rounded-2xl border border-white/5 bg-white/[0.02] p-6 md:p-8 mb-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--holo-purple)]/5 to-transparent pointer-events-none" />
-        <div className="relative flex flex-col md:flex-row items-start gap-6">
+      <div className="surface-1 rounded-lg p-5 md:p-6 mb-8">
+        <div className="flex flex-col md:flex-row items-start gap-5">
           {set.logoUrl && (
-            <div className="relative h-20 w-48 shrink-0">
-              <Image
-                src={set.logoUrl}
-                alt={set.name}
-                fill
-                className="object-contain object-left drop-shadow-[0_0_12px_oklch(0.7_0.15_280_/_20%)]"
-                sizes="200px"
-              />
+            <div className="relative h-14 w-40 shrink-0">
+              <Image src={set.logoUrl} alt={set.name} fill className="object-contain object-left" sizes="160px" />
             </div>
           )}
-          <div>
-            <Link href="/sets" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              All Sets
-            </Link>
-            <h1 className="text-3xl font-bold">{set.name}</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">{set.series}</p>
-            <div className="flex items-center gap-3 mt-3">
-              <Badge variant="secondary" className="bg-white/5 border-white/10 text-muted-foreground text-xs">
-                {set.printedTotal} cards
-              </Badge>
-              {set.releaseDate && (
-                <span className="text-xs text-muted-foreground/60">
-                  Released {format(new Date(set.releaseDate), 'MMMM d, yyyy')}
-                </span>
-              )}
+          <div className="flex-1">
+            <h1 className="text-display-md">{set.name}</h1>
+            <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">{set.series}</p>
+          </div>
+          <div className="flex gap-6 text-right shrink-0">
+            <div>
+              <p className="text-label">Cards</p>
+              <p className="text-lg font-semibold text-value mt-0.5">{set.printedTotal}</p>
             </div>
+            {set.releaseDate && (
+              <div>
+                <p className="text-label">Released</p>
+                <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">{format(new Date(set.releaseDate), 'MMM d, yyyy')}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,50 +1,64 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function SearchBar() {
+export function SearchBar({ size = 'default' }: { size?: 'default' | 'lg' }) {
   const [query, setQuery] = useState('')
+  const [focused, setFocused] = useState(false)
   const router = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim()) return
     router.push(`/sets?q=${encodeURIComponent(query.trim())}`)
+    setFocused(false)
+    inputRef.current?.blur()
   }
 
-  return (
-    <form onSubmit={handleSearch} className="relative max-w-lg mx-auto">
-      <div className="relative group">
-        {/* Glow ring on focus */}
-        <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[var(--holo-purple)] to-[var(--holo-blue)] opacity-0 group-focus-within:opacity-20 blur-sm transition-opacity duration-300" />
+  // Keyboard shortcut
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+        const tag = (e.target as HTMLElement)?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        e.preventDefault()
+        inputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [])
 
-        <div className="relative flex items-center bg-white/[0.04] border border-white/[0.08] group-focus-within:border-white/[0.15] rounded-2xl transition-all duration-300 overflow-hidden">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="ml-4 text-muted-foreground/40 shrink-0"
-          >
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search cards, sets, or Pokemon..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 px-3 py-3.5 outline-none"
-          />
-          <button
-            type="submit"
-            className="mr-1.5 px-4 py-1.5 text-xs font-medium text-white rounded-xl bg-gradient-to-r from-[var(--holo-purple)] to-[var(--holo-blue)] hover:opacity-90 transition-opacity shrink-0"
-          >
+  const isLg = size === 'lg'
+
+  return (
+    <form onSubmit={handleSearch} className="relative w-full">
+      <div className={`flex items-center surface-2 rounded-lg transition-all ${focused ? 'ring-1 ring-[var(--brand)] border-[var(--brand)]' : ''}`}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`${isLg ? 'ml-4' : 'ml-3'} text-[var(--text-tertiary)] shrink-0`}>
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="Search cards, sets, Pokemon..."
+          className={`flex-1 bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none ${isLg ? 'px-3 py-3 text-sm' : 'px-2.5 py-2 text-[13px]'}`}
+        />
+        {!focused && !query && (
+          <kbd className={`${isLg ? 'mr-3' : 'mr-2.5'} hidden sm:inline px-1.5 py-0.5 text-[10px] text-[var(--text-tertiary)] bg-[var(--surface-1)] border border-[var(--border-default)] rounded font-mono`}>
+            /
+          </kbd>
+        )}
+        {query && (
+          <button type="submit" className={`${isLg ? 'mr-2' : 'mr-1.5'} px-3 py-1 text-[11px] font-medium text-white bg-[var(--brand)] rounded-md hover:opacity-90 transition-opacity`}>
             Search
           </button>
-        </div>
+        )}
       </div>
     </form>
   )

@@ -1,15 +1,10 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useState, useTransition } from 'react'
 
-interface SetFilterProps {
-  seriesList: string[]
-  currentSeries?: string
-  currentQuery?: string
-}
+interface SetFilterProps { seriesList: string[]; currentSeries?: string; currentQuery?: string }
 
 export function SetFilter({ seriesList, currentSeries, currentQuery }: SetFilterProps) {
   const router = useRouter()
@@ -24,56 +19,33 @@ export function SetFilter({ seriesList, currentSeries, currentQuery }: SetFilter
     if (key !== 'series' && currentSeries) params.set('series', currentSeries)
     if (key !== 'q' && search) params.set('q', search)
     params.set('page', '1')
-
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`)
-    })
+    startTransition(() => { router.push(`${pathname}?${params.toString()}`) })
   }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      <div className="relative sm:max-w-xs flex-1">
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none"
-        >
+    <div className="flex flex-col sm:flex-row gap-2">
+      <div className="relative flex-1 sm:max-w-xs">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none">
           <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
         </svg>
-        <Input
+        <input
           placeholder="Search sets..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') updateFilters('q', search)
-          }}
-          className="pl-9 bg-white/5 border-white/10 focus:border-[var(--holo-purple)]/50 rounded-xl"
+          onKeyDown={(e) => { if (e.key === 'Enter') updateFilters('q', search) }}
+          className="w-full pl-9 pr-3 py-2 text-[13px] bg-[var(--surface-2)] border border-[var(--border-default)] rounded-md text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--brand)] transition-colors"
         />
       </div>
-      <Select
-        value={currentSeries || 'all'}
-        onValueChange={(value) => updateFilters('series', value || 'all')}
-      >
-        <SelectTrigger className="sm:max-w-[200px] bg-white/5 border-white/10 rounded-xl">
+      <Select value={currentSeries || 'all'} onValueChange={(v) => updateFilters('series', v || 'all')}>
+        <SelectTrigger className="sm:max-w-[180px] bg-[var(--surface-2)] border-[var(--border-default)] text-[13px]">
           <SelectValue placeholder="All Series" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Series</SelectItem>
-          {seriesList.map((s) => (
-            <SelectItem key={s} value={s}>{s}</SelectItem>
-          ))}
+          {seriesList.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
         </SelectContent>
       </Select>
-      {isPending && (
-        <div className="flex items-center gap-2 self-center">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--holo-purple)] animate-pulse" />
-          <span className="text-xs text-muted-foreground">Loading...</span>
-        </div>
-      )}
+      {isPending && <span className="text-[11px] text-[var(--text-tertiary)] self-center">Loading...</span>}
     </div>
   )
 }

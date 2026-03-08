@@ -1,31 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
 
-interface PriceChartProps {
-  cardId: string
-  variant?: string
-}
-
-interface PricePoint {
-  recorded_date: string
-  market_price: number
-}
+interface PriceChartProps { cardId: string; variant?: string }
+interface PricePoint { recorded_date: string; market_price: number }
 
 export function PriceChart({ cardId, variant = 'normal' }: PriceChartProps) {
   const [data, setData] = useState<PricePoint[]>([])
@@ -36,111 +16,60 @@ export function PriceChart({ cardId, variant = 'normal' }: PriceChartProps) {
     async function load() {
       setLoading(true)
       const res = await fetch(`/api/price-history/${cardId}?days=${days}&variant=${variant}`)
-      if (res.ok) {
-        setData(await res.json())
-      }
+      if (res.ok) setData(await res.json())
       setLoading(false)
     }
     load()
   }, [cardId, variant, days])
 
-  if (loading) {
-    return <Skeleton className="h-64 w-full rounded-2xl" />
-  }
+  if (loading) return <div className="h-64 skeleton rounded-lg" />
 
   if (data.length === 0) {
     return (
-      <Card className="border-white/5 bg-white/[0.02] rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-lg">Price History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No price history data available yet.</p>
-        </CardContent>
-      </Card>
+      <div className="surface-1 rounded-lg p-6">
+        <p className="text-[13px] font-semibold mb-2">Price History</p>
+        <p className="text-[12px] text-[var(--text-tertiary)]">No price data available yet.</p>
+      </div>
     )
   }
 
-  const chartData = data.map((d) => ({
-    date: format(new Date(d.recorded_date), 'MMM d'),
-    price: Number(d.market_price),
-  }))
+  const chartData = data.map((d) => ({ date: format(new Date(d.recorded_date), 'MMM d'), price: Number(d.market_price) }))
 
   return (
-    <Card className="border-white/5 bg-white/[0.02] rounded-2xl overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">Price History</CardTitle>
-        <div className="flex gap-1 p-1 rounded-lg bg-white/5">
+    <div className="surface-1 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
+        <p className="text-[13px] font-semibold">Price History</p>
+        <div className="flex gap-1">
           {[30, 90, 365].map((d) => (
-            <button
-              key={d}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                days === d
-                  ? 'bg-gradient-to-r from-[var(--holo-purple)] to-[var(--holo-blue)] text-white shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              onClick={() => setDays(d)}
-            >
+            <button key={d} onClick={() => setDays(d)}
+              className={`px-2 py-0.5 text-[11px] font-medium rounded transition-colors ${days === d ? 'bg-[var(--brand)] text-white' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'}`}>
               {d === 365 ? '1Y' : `${d}D`}
             </button>
           ))}
         </div>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+      </div>
+      <div className="p-4">
+        <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={chartData}>
             <defs>
-              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.7 0.18 280)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="oklch(0.7 0.18 280)" stopOpacity={0} />
+              <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="oklch(0.65 0.18 240)" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="oklch(0.65 0.18 240)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="oklch(1 0 0 / 5%)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: 'oklch(0.5 0.02 270)' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: 'oklch(0.5 0.02 270)' }}
-              tickFormatter={(value) => `$${value}`}
-              axisLine={false}
-              tickLine={false}
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 4%)" vertical={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'oklch(0.45 0.01 250)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: 'oklch(0.45 0.01 250)' }} tickFormatter={(v) => `$${v}`} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{
-                background: 'oklch(0.12 0.015 270 / 90%)',
-                border: '1px solid oklch(1 0 0 / 10%)',
-                borderRadius: '12px',
-                backdropFilter: 'blur(16px)',
-                boxShadow: '0 8px 32px oklch(0 0 0 / 30%)',
-              }}
-              labelStyle={{ color: 'oklch(0.6 0.02 270)', fontSize: 11 }}
-              itemStyle={{ color: 'oklch(0.95 0 0)' }}
-              formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Market Price']}
+              contentStyle={{ background: 'oklch(0.14 0.005 250)', border: '1px solid oklch(1 0 0 / 8%)', borderRadius: '6px', fontSize: 12 }}
+              labelStyle={{ color: 'oklch(0.55 0.01 250)', fontSize: 10 }}
+              formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Market']}
             />
-            <Area
-              type="monotone"
-              dataKey="price"
-              stroke="oklch(0.7 0.18 280)"
-              strokeWidth={2}
-              fill="url(#priceGradient)"
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: 'oklch(0.7 0.18 280)',
-                stroke: 'oklch(0.12 0.015 270)',
-                strokeWidth: 2,
-              }}
-            />
+            <Area type="monotone" dataKey="price" stroke="oklch(0.65 0.18 240)" strokeWidth={1.5} fill="url(#priceGrad)" dot={false}
+              activeDot={{ r: 3, fill: 'oklch(0.65 0.18 240)', stroke: 'oklch(0.14 0.005 250)', strokeWidth: 2 }} />
           </AreaChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
