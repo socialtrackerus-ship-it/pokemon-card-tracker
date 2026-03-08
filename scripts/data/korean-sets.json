@@ -1,0 +1,130 @@
+[
+  {
+    "id": "sv8a-ko",
+    "name": "Terastal Fest ex",
+    "series": "Scarlet & Violet",
+    "printedTotal": 91,
+    "total": 91,
+    "releaseDate": "2025/02/14"
+  },
+  {
+    "id": "sv7-ko",
+    "name": "Stellar Crown",
+    "series": "Scarlet & Violet",
+    "printedTotal": 102,
+    "total": 102,
+    "releaseDate": "2024/11/15"
+  },
+  {
+    "id": "sv6-ko",
+    "name": "Mask of Change",
+    "series": "Scarlet & Violet",
+    "printedTotal": 101,
+    "total": 101,
+    "releaseDate": "2024/06/21"
+  },
+  {
+    "id": "sv5-ko",
+    "name": "Cyber Judge / Wild Force",
+    "series": "Scarlet & Violet",
+    "printedTotal": 142,
+    "total": 142,
+    "releaseDate": "2024/03/22"
+  },
+  {
+    "id": "sv4a-ko",
+    "name": "Shiny Treasure ex",
+    "series": "Scarlet & Violet",
+    "printedTotal": 358,
+    "total": 358,
+    "releaseDate": "2024/02/02"
+  },
+  {
+    "id": "sv4-ko",
+    "name": "Ancient Roar / Future Flash",
+    "series": "Scarlet & Violet",
+    "printedTotal": 138,
+    "total": 138,
+    "releaseDate": "2023/12/15"
+  },
+  {
+    "id": "sv3-ko",
+    "name": "Ruler of the Black Flame",
+    "series": "Scarlet & Violet",
+    "printedTotal": 108,
+    "total": 108,
+    "releaseDate": "2023/09/22"
+  },
+  {
+    "id": "sv2a-ko",
+    "name": "Pokemon Card 151",
+    "series": "Scarlet & Violet",
+    "printedTotal": 165,
+    "total": 165,
+    "releaseDate": "2023/08/18"
+  },
+  {
+    "id": "sv2-ko",
+    "name": "Snow Hazard / Clay Burst",
+    "series": "Scarlet & Violet",
+    "printedTotal": 142,
+    "total": 142,
+    "releaseDate": "2023/06/16"
+  },
+  {
+    "id": "sv1-ko",
+    "name": "Scarlet & Violet",
+    "series": "Scarlet & Violet",
+    "printedTotal": 156,
+    "total": 156,
+    "releaseDate": "2023/03/17"
+  },
+  {
+    "id": "s12a-ko",
+    "name": "VSTAR Universe",
+    "series": "Sword & Shield",
+    "printedTotal": 172,
+    "total": 172,
+    "releaseDate": "2023/01/20"
+  },
+  {
+    "id": "s12-ko",
+    "name": "Paradigm Trigger",
+    "series": "Sword & Shield",
+    "printedTotal": 98,
+    "total": 98,
+    "releaseDate": "2022/12/16"
+  },
+  {
+    "id": "s11-ko",
+    "name": "Lost Abyss / Incandescent Arcana",
+    "series": "Sword & Shield",
+    "printedTotal": 168,
+    "total": 168,
+    "releaseDate": "2022/10/14"
+  },
+  {
+    "id": "s10-ko",
+    "name": "Time Gazer / Space Juggler",
+    "series": "Sword & Shield",
+    "printedTotal": 134,
+    "total": 134,
+    "releaseDate": "2022/06/17"
+  },
+  {
+    "id": "s9-ko",
+    "name": "Star Birth",
+    "series": "Sword & Shield",
+    "printedTotal": 100,
+    "total": 100,
+    "releaseDate": "2022/03/18"
+  },
+  {
+    "id": "s8b-ko",
+    "name": "VMAX Climax",
+    "series": "Sword & Shield",
+    "printedTotal": 184,
+    "total": 184,
+    "releaseDate": "2022/02/04"
+  }
+]

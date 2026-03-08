@@ -10,7 +10,7 @@ export async function GET() {
     where: { userId: session.user.id },
     include: {
       card: {
-        include: { prices: true },
+        include: { prices: { where: { source: 'tcgplayer' } } },
       },
     },
   })

@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import * as fs from 'fs'
+import * as path from 'path'
 
 const prisma = new PrismaClient({
   datasources: { db: { url: process.env.DATABASE_URL } },
@@ -55,19 +57,10 @@ async function fetchSetsFromGitHub(): Promise<any[]> {
   console.log('Falling back to GitHub data repo...')
   const res = await fetch(`${GITHUB_BASE}/sets/en.json`)
   if (!res.ok) throw new Error(`GitHub fetch failed: ${res.status}`)
-  const sets = await res.json()
-  return sets
+  return await res.json()
 }
 
-async function seedSets() {
-  let sets = await fetchSetsFromAPI()
-
-  if (!sets) {
-    sets = await fetchSetsFromGitHub()
-  }
-
-  console.log(`Found ${sets.length} sets. Upserting in batch...`)
-
+async function upsertSets(sets: any[], language: string) {
   const BATCH_SIZE = 50
   for (let i = 0; i < sets.length; i += BATCH_SIZE) {
     const batch = sets.slice(i, i + BATCH_SIZE)
@@ -78,22 +71,22 @@ async function seedSets() {
           create: {
             id: s.id,
             name: s.name,
-            series: s.series,
-            printedTotal: s.printedTotal,
-            total: s.total,
-            releaseDate: s.releaseDate || null,
-            symbolUrl: s.images?.symbol || null,
-            logoUrl: s.images?.logo || null,
-            language: 'en',
+            series: s.series || 'Other',
+            printedTotal: s.printedTotal || s.printed_total || 0,
+            total: s.total || 0,
+            releaseDate: s.releaseDate || s.release_date || null,
+            symbolUrl: s.images?.symbol || s.symbol_url || null,
+            logoUrl: s.images?.logo || s.logo_url || null,
+            language,
           },
           update: {
             name: s.name,
-            series: s.series,
-            printedTotal: s.printedTotal,
-            total: s.total,
-            releaseDate: s.releaseDate || null,
-            symbolUrl: s.images?.symbol || null,
-            logoUrl: s.images?.logo || null,
+            series: s.series || 'Other',
+            printedTotal: s.printedTotal || s.printed_total || 0,
+            total: s.total || 0,
+            releaseDate: s.releaseDate || s.release_date || null,
+            symbolUrl: s.images?.symbol || s.symbol_url || null,
+            logoUrl: s.images?.logo || s.logo_url || null,
             syncedAt: new Date(),
           },
         })
@@ -101,8 +94,58 @@ async function seedSets() {
     )
     console.log(`  Upserted ${Math.min(i + BATCH_SIZE, sets.length)}/${sets.length} sets`)
   }
+}
 
-  console.log(`Done! Upserted ${sets.length} sets.`)
+/**
+ * Load sets from a local JSON file and prefix IDs to avoid collisions.
+ */
+function loadLocalSets(filename: string, prefix: string): any[] | null {
+  const filePath = path.join(__dirname, 'data', filename)
+  if (!fs.existsSync(filePath)) return null
+  const raw = fs.readFileSync(filePath, 'utf-8')
+  const sets = JSON.parse(raw)
+  // Ensure IDs have the language prefix
+  return sets.map((s: any) => ({
+    ...s,
+    id: s.id.startsWith(`${prefix}-`) ? s.id : `${prefix}-${s.id}`,
+  }))
+}
+
+const LOCAL_LANGUAGES = [
+  { code: 'ja', label: 'Japanese', file: 'japanese-sets.json', prefix: 'ja' },
+  { code: 'ko', label: 'Korean', file: 'korean-sets.json', prefix: 'ko' },
+  { code: 'zh', label: 'Chinese', file: 'chinese-sets.json', prefix: 'zh' },
+]
+
+async function seedSets() {
+  // ─── English sets (from API / GitHub) ───
+  console.log('=== English Sets ===')
+  let enSets = await fetchSetsFromAPI()
+  if (!enSets) {
+    enSets = await fetchSetsFromGitHub()
+  }
+  console.log(`Found ${enSets.length} English sets. Upserting...`)
+  await upsertSets(enSets, 'en')
+
+  // ─── Non-English sets (from local data files) ───
+  for (const { code, label, file, prefix } of LOCAL_LANGUAGES) {
+    console.log(`\n=== ${label} Sets ===`)
+    const sets = loadLocalSets(file, prefix)
+    if (!sets) {
+      console.log(`  No data file found at scripts/data/${file}`)
+      continue
+    }
+    console.log(`Found ${sets.length} ${label} sets. Upserting...`)
+    await upsertSets(sets, code)
+  }
+
+  // ─── Summary ───
+  const counts = await prisma.set.groupBy({ by: ['language'], _count: true })
+  const total = counts.reduce((sum, c) => sum + c._count, 0)
+  console.log(`\nDone! Total sets: ${total}`)
+  for (const c of counts) {
+    console.log(`  ${c.language.toUpperCase()}: ${c._count}`)
+  }
   await prisma.$disconnect()
 }
 

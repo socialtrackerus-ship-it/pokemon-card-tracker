@@ -21,19 +21,39 @@ model User {
 }
 
 model Set {
-  id           String   @id
-  name         String
-  series       String
-  printedTotal Int      @default(0) @map("printed_total")
-  total        Int      @default(0)
-  releaseDate  String?  @map("release_date")
-  symbolUrl    String?  @map("symbol_url")
-  logoUrl      String?  @map("logo_url")
-  language     String   @default("en")
-  syncedAt     DateTime @default(now()) @map("synced_at")
-  cards        Card[]
+  id             String          @id
+  name           String
+  series         String
+  printedTotal   Int             @default(0) @map("printed_total")
+  total          Int             @default(0)
+  releaseDate    String?         @map("release_date")
+  symbolUrl      String?         @map("symbol_url")
+  logoUrl        String?         @map("logo_url")
+  language       String          @default("en")
+  syncedAt       DateTime        @default(now()) @map("synced_at")
+  cards          Card[]
+  sealedProducts SealedProduct[]
 
+  @@index([language])
   @@map("sets")
+}
+
+model SealedProduct {
+  id          String   @id @default(cuid())
+  setId       String   @map("set_id")
+  name        String
+  productType String   @map("product_type")
+  source      String   @default("tcgplayer")
+  low         Float?
+  market      Float?
+  high        Float?
+  updatedAt   DateTime @default(now()) @map("updated_at")
+
+  set         Set      @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@unique([setId, productType, source])
+  @@index([setId])
+  @@map("sealed_products")
 }
 
 model Card {
@@ -70,6 +90,7 @@ model CardPrice {
   id        String   @id @default(cuid())
   cardId    String   @map("card_id")
   variant   String   @default("normal")
+  source    String   @default("tcgplayer")
   low       Float?
   mid       Float?
   high      Float?
@@ -78,7 +99,7 @@ model CardPrice {
 
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
-  @@unique([cardId, variant])
+  @@unique([cardId, variant, source])
   @@index([cardId])
   @@map("card_prices")
 }

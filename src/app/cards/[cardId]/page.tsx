@@ -65,7 +65,14 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   })
   if (!card) notFound()
 
-  const gradedPrices = await prisma.gradedPrice.findMany({ where: { cardId } })
+  const gradedPrices = await prisma.gradedPrice.findMany({
+    where: { cardId },
+    orderBy: [{ gradingCompany: 'asc' }, { grade: 'desc' }],
+  })
+
+  // Separate prices by source
+  const tcgPrices = card.prices.filter(p => p.source === 'tcgplayer')
+  const ebayPrices = card.prices.filter(p => p.source === 'ebay')
   const prices = card.prices
   const attacks = (card.attacks || []) as unknown as Attack[]
   const abilities = (card.abilities || []) as unknown as Ability[]
@@ -191,13 +198,13 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             </div>
           </header>
 
-          {/* ===== MARKET PRICES ===== */}
-          {prices.length > 0 && (
+          {/* ===== MARKET PRICES — TCGPlayer ===== */}
+          {tcgPrices.length > 0 && (
             <section className="panel animate-in">
               <div className="panel-header">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-[14px] font-semibold tracking-tight">Market Prices</h2>
+                    <h2 className="text-[14px] font-semibold tracking-tight">TCGPlayer Prices</h2>
                     {highestMarket !== null && (
                       <span className="price-tag-lg">${highestMarket.toFixed(2)}</span>
                     )}
@@ -230,8 +237,8 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {prices.map((p) => (
-                        <tr key={p.variant}>
+                      {tcgPrices.map((p) => (
+                        <tr key={`tcg-${p.variant}`}>
                           <td className="px-4 py-3 font-medium capitalize text-[13px]">{p.variant}</td>
                           <td className="px-4 py-3 text-right text-value text-[var(--text-tertiary)] text-[13px]">
                             {p.low ? `$${p.low.toFixed(2)}` : '\u2014'}
@@ -244,6 +251,90 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                           </td>
                           <td className="px-4 py-3 text-right text-value font-semibold gold-text text-[13px]">
                             {p.market ? `$${p.market.toFixed(2)}` : '\u2014'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ===== EBAY PRICES ===== */}
+          {ebayPrices.length > 0 && (
+            <section className="panel animate-in">
+              <div className="panel-header">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-[14px] font-semibold tracking-tight">eBay Market Prices</h2>
+                    <span className="chip text-[10px]">Active Listings</span>
+                  </div>
+                </div>
+              </div>
+              <div className="panel-body-flush">
+                <div className="overflow-x-auto">
+                  <table className="w-full table-premium table-striped">
+                    <thead>
+                      <tr>
+                        <th className="text-left px-4 py-3 text-[11px]">Variant</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Low</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Avg</th>
+                        <th className="text-right px-4 py-3 text-[11px]">High</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ebayPrices.map((p) => (
+                        <tr key={`ebay-${p.variant}`}>
+                          <td className="px-4 py-3 font-medium capitalize text-[13px]">{p.variant}</td>
+                          <td className="px-4 py-3 text-right text-value text-[var(--text-tertiary)] text-[13px]">
+                            {p.low ? `$${p.low.toFixed(2)}` : '\u2014'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-value font-semibold text-[13px]">
+                            {p.market ? `$${p.market.toFixed(2)}` : '\u2014'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-value text-[var(--text-secondary)] text-[13px]">
+                            {p.high ? `$${p.high.toFixed(2)}` : '\u2014'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ===== PSA / GRADED PRICES ===== */}
+          {gradedPrices.length > 0 && (
+            <section className="panel animate-in">
+              <div className="panel-header">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-[14px] font-semibold tracking-tight">Graded Card Prices</h2>
+                  <span className="chip text-[10px]">PSA &middot; BGS &middot; CGC</span>
+                </div>
+              </div>
+              <div className="panel-body-flush">
+                <div className="overflow-x-auto">
+                  <table className="w-full table-premium table-striped">
+                    <thead>
+                      <tr>
+                        <th className="text-left px-4 py-3 text-[11px]">Company</th>
+                        <th className="text-left px-4 py-3 text-[11px]">Grade</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Price</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Source</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gradedPrices.map((gp) => (
+                        <tr key={`${gp.gradingCompany}-${gp.grade}`}>
+                          <td className="px-4 py-3 font-semibold text-[13px]">{gp.gradingCompany}</td>
+                          <td className="px-4 py-3 font-medium text-[13px]">{gp.grade}</td>
+                          <td className="px-4 py-3 text-right text-value font-semibold gold-text text-[13px]">
+                            {gp.price ? `$${gp.price.toFixed(2)}` : '\u2014'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-[11px] text-[var(--text-tertiary)] capitalize">
+                            {gp.source || 'market'}
                           </td>
                         </tr>
                       ))}

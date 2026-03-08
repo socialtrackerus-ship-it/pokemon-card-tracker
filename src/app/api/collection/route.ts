@@ -11,7 +11,7 @@ export async function GET() {
     include: {
       card: {
         include: {
-          prices: true,
+          prices: { where: { source: 'tcgplayer' } },
           set: { select: { id: true, name: true } },
         },
       },

@@ -22,26 +22,83 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
   const set = await prisma.set.findUnique({ where: { id: setId } })
   if (!set) notFound()
 
-  const [cardsRaw, count, chaseCards] = await Promise.all([
+  // Fetch card IDs in rarity order using raw SQL, then load full cards
+  const cardIdsRaw: { id: string }[] = await prisma.$queryRaw`
+    SELECT id FROM cards
+    WHERE set_id = ${setId}
+    ORDER BY
+      CASE rarity
+        WHEN 'Hyper Rare' THEN 1
+        WHEN 'Mega Hyper Rare' THEN 2
+        WHEN 'Special Illustration Rare' THEN 3
+        WHEN 'Illustration Rare' THEN 4
+        WHEN 'Shiny Ultra Rare' THEN 5
+        WHEN 'Ultra Rare' THEN 6
+        WHEN 'Rare Secret' THEN 7
+        WHEN 'Rare Rainbow' THEN 8
+        WHEN 'ACE SPEC Rare' THEN 9
+        WHEN 'Rare Shiny GX' THEN 10
+        WHEN 'Rare Shining' THEN 11
+        WHEN 'Amazing Rare' THEN 12
+        WHEN 'Radiant Rare' THEN 13
+        WHEN 'LEGEND' THEN 14
+        WHEN 'Rare Ultra' THEN 15
+        WHEN 'Rare Holo VSTAR' THEN 16
+        WHEN 'Rare Holo VMAX' THEN 17
+        WHEN 'Rare Holo V' THEN 18
+        WHEN 'Rare Holo GX' THEN 19
+        WHEN 'Rare Holo EX' THEN 20
+        WHEN 'Rare Holo LV.X' THEN 21
+        WHEN 'MEGA_ATTACK_RARE' THEN 22
+        WHEN 'Shiny Rare' THEN 23
+        WHEN 'Double Rare' THEN 24
+        WHEN 'Rare Shiny' THEN 25
+        WHEN 'Rare Prime' THEN 26
+        WHEN 'Rare Holo Star' THEN 27
+        WHEN 'Rare BREAK' THEN 28
+        WHEN 'Rare Prism Star' THEN 29
+        WHEN 'Rare ACE' THEN 30
+        WHEN 'Classic Collection' THEN 31
+        WHEN 'Trainer Gallery Rare Holo' THEN 32
+        WHEN 'Black White Rare' THEN 33
+        WHEN 'Rare Holo' THEN 34
+        WHEN 'Rare' THEN 35
+        WHEN 'Promo' THEN 36
+        WHEN 'Uncommon' THEN 37
+        WHEN 'Common' THEN 38
+        ELSE 39
+      END,
+      number ASC
+    OFFSET ${(page - 1) * pageSize}
+    LIMIT ${pageSize}
+  `
+  const pageCardIds = cardIdsRaw.map(r => r.id)
+
+  const [cardsRaw, count, chaseCards, sealedProducts] = await Promise.all([
     prisma.card.findMany({
-      where: { setId },
-      include: { prices: true },
-      orderBy: { number: 'asc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      where: { id: { in: pageCardIds } },
+      include: { prices: { where: { source: 'tcgplayer' } } },
     }),
     prisma.card.count({ where: { setId } }),
     prisma.cardPrice.findMany({
-      where: { card: { setId }, market: { not: null } },
+      where: { card: { setId }, source: 'tcgplayer', market: { not: null } },
       orderBy: { market: 'desc' },
       take: 3,
       include: { card: true },
+    }),
+    prisma.sealedProduct.findMany({
+      where: { setId },
+      orderBy: { productType: 'asc' },
     }),
   ])
 
   const totalPages = Math.ceil(count / pageSize)
 
-  const cards = cardsRaw.map((c) => ({
+  // Preserve rarity sort order from raw query
+  const cardMap = new Map(cardsRaw.map(c => [c.id, c]))
+  const cardsSorted = pageCardIds.map(id => cardMap.get(id)!).filter(Boolean)
+
+  const cards = cardsSorted.map((c) => ({
     id: c.id,
     set_id: c.setId,
     name: c.name,
@@ -133,6 +190,42 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
               </div>
             </div>
           </div>
+
+          {/* Sealed Product Prices */}
+          {sealedProducts.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-[var(--border-subtle)]">
+              <h3 className="text-eyebrow mb-4">SEALED PRODUCTS</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {sealedProducts.map((sp) => {
+                  const label = sp.productType
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase())
+                  return (
+                    <div key={sp.id} className="metric-card px-4 py-3 rounded-lg">
+                      <span className="text-label block">{label}</span>
+                      {sp.market ? (
+                        <span className="text-metric-sm gold-text mt-1 block">
+                          ${sp.market.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-[var(--text-tertiary)] mt-1 block">
+                          No data
+                        </span>
+                      )}
+                      {sp.low && sp.high && (
+                        <span className="text-[10px] text-[var(--text-tertiary)] mt-0.5 block">
+                          ${sp.low.toFixed(2)} &ndash; ${sp.high.toFixed(2)}
+                        </span>
+                      )}
+                      <span className="text-[9px] text-[var(--text-tertiary)] mt-0.5 block uppercase">
+                        {sp.source}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Chase Cards */}
           {chaseCards.length > 0 && (

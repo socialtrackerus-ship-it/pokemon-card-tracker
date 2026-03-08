@@ -47,9 +47,16 @@ export function SetCard({ set }: SetCardProps) {
 
           {/* Bottom metadata row */}
           <div className="flex items-center justify-between mt-auto pt-2.5">
-            <span className="text-label text-[var(--text-tertiary)]">
-              {set.printed_total} cards
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-label text-[var(--text-tertiary)]">
+                {set.printed_total} cards
+              </span>
+              {set.language !== 'en' && (
+                <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[var(--surface-3)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                  {set.language}
+                </span>
+              )}
+            </div>
             {releaseLabel && (
               <span className="text-label text-[var(--text-tertiary)]">
                 {releaseLabel}

@@ -39,7 +39,6 @@ async function fetchWithRetry(url: string, opts: Record<string, any> = {}, retri
   throw new Error('Max retries exceeded')
 }
 
-// Check if the Pokemon TCG API is responsive
 async function isAPIAvailable(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/sets?pageSize=1`, { headers, signal: AbortSignal.timeout(10000) })
@@ -70,9 +69,9 @@ async function fetchCardsFromAPI(setId: string): Promise<any[]> {
   return allCards
 }
 
-async function fetchCardsFromGitHub(setId: string): Promise<any[] | null> {
+async function fetchCardsFromGitHub(setId: string, lang: string = 'en'): Promise<any[] | null> {
   try {
-    const res = await fetch(`${GITHUB_BASE}/cards/en/${setId}.json`)
+    const res = await fetch(`${GITHUB_BASE}/cards/${lang}/${setId}.json`)
     if (!res.ok) return null
     return await res.json()
   } catch {
@@ -80,7 +79,6 @@ async function fetchCardsFromGitHub(setId: string): Promise<any[] | null> {
   }
 }
 
-// Batch upsert cards using a transaction
 async function upsertCardsBatch(cards: any[], setId: string) {
   const BATCH_SIZE = 25
 
@@ -127,16 +125,17 @@ async function upsertCardsBatch(cards: any[], setId: string) {
         })
       )
 
-      // Upsert prices (only available from API, not GitHub)
+      // Upsert TCGPlayer prices (only available from API, not GitHub)
       const prices = c.tcgplayer?.prices
       if (prices) {
         for (const [variant, p] of Object.entries(prices) as [string, any][]) {
           ops.push(
             prisma.cardPrice.upsert({
-              where: { cardId_variant: { cardId: c.id, variant } },
+              where: { cardId_variant_source: { cardId: c.id, variant, source: 'tcgplayer' } },
               create: {
                 cardId: c.id,
                 variant,
+                source: 'tcgplayer',
                 low: p.low ?? null,
                 mid: p.mid ?? null,
                 high: p.high ?? null,
@@ -163,7 +162,7 @@ async function upsertCardsBatch(cards: any[], setId: string) {
 async function seedCards() {
   const allSets = await prisma.set.findMany({
     orderBy: { releaseDate: 'asc' },
-    select: { id: true, name: true, total: true },
+    select: { id: true, name: true, total: true, language: true },
   })
 
   // Check which sets already have cards
@@ -188,22 +187,28 @@ async function seedCards() {
     return
   }
 
-  // Check which data source to use
+  // Check API availability
   const useAPI = await isAPIAvailable()
   console.log(`Data source: ${useAPI ? 'Pokemon TCG API (with prices)' : 'GitHub repo (no prices)'}\n`)
 
   let completed = 0
   let skipped = 0
   for (const set of toSeed) {
-    console.log(`[${completed + skipped + 1}/${toSeed.length}] ${set.name} (${set.id})`)
+    console.log(`[${completed + skipped + 1}/${toSeed.length}] ${set.name} (${set.id}) [${set.language}]`)
 
     try {
       let cards: any[] | null = null
 
-      if (useAPI) {
+      if (set.language === 'ja') {
+        // Japanese cards are not available via the Pokemon TCG API or GitHub repo.
+        // They need to be imported from a separate data source.
+        console.log(`  Skipped — Japanese cards require manual import\n`)
+        skipped++
+        continue
+      } else if (useAPI) {
         cards = await fetchCardsFromAPI(set.id)
       } else {
-        cards = await fetchCardsFromGitHub(set.id)
+        cards = await fetchCardsFromGitHub(set.id, 'en')
         if (!cards) {
           console.log(`  Skipped — not available in GitHub data\n`)
           skipped++
@@ -216,7 +221,8 @@ async function seedCards() {
 
       completed++
       console.log(`  Done! (${completed} seeded, ${skipped} skipped)\n`)
-      if (useAPI) await delay(2000) // Rate limit for API
+      if (useAPI && set.language === 'en') await delay(2000)
+      else await delay(500)
     } catch (err: any) {
       console.error(`  ERROR: ${err.message}`)
       console.log('  Waiting 15s before continuing...\n')

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const [data, total] = await Promise.all([
     prisma.card.findMany({
       where,
-      include: { prices: true },
+      include: { prices: { where: { source: 'tcgplayer' } } },
       orderBy: { number: 'asc' },
       skip: (page - 1) * pageSize,
       take: pageSize,

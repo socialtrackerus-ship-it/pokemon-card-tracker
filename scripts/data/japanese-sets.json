@@ -1,0 +1,242 @@
+[
+  {
+    "id": "sv8a",
+    "name": "Terastal Fest ex",
+    "series": "Scarlet & Violet",
+    "printedTotal": 91,
+    "total": 91,
+    "releaseDate": "2025/01/10"
+  },
+  {
+    "id": "sv7a",
+    "name": "Paradise Dragona",
+    "series": "Scarlet & Violet",
+    "printedTotal": 76,
+    "total": 76,
+    "releaseDate": "2024/10/18"
+  },
+  {
+    "id": "sv7",
+    "name": "Stellar Crown",
+    "series": "Scarlet & Violet",
+    "printedTotal": 102,
+    "total": 102,
+    "releaseDate": "2024/09/13"
+  },
+  {
+    "id": "sv6a",
+    "name": "Night Wanderer",
+    "series": "Scarlet & Violet",
+    "printedTotal": 64,
+    "total": 64,
+    "releaseDate": "2024/06/07"
+  },
+  {
+    "id": "sv6",
+    "name": "Mask of Change",
+    "series": "Scarlet & Violet",
+    "printedTotal": 101,
+    "total": 101,
+    "releaseDate": "2024/04/26"
+  },
+  {
+    "id": "sv5a",
+    "name": "Crimson Haze",
+    "series": "Scarlet & Violet",
+    "printedTotal": 72,
+    "total": 72,
+    "releaseDate": "2024/03/22"
+  },
+  {
+    "id": "sv5",
+    "name": "Cyber Judge",
+    "series": "Scarlet & Violet",
+    "printedTotal": 71,
+    "total": 71,
+    "releaseDate": "2024/01/26"
+  },
+  {
+    "id": "sv5m",
+    "name": "Wild Force",
+    "series": "Scarlet & Violet",
+    "printedTotal": 71,
+    "total": 71,
+    "releaseDate": "2024/01/26"
+  },
+  {
+    "id": "sv4a",
+    "name": "Shiny Treasure ex",
+    "series": "Scarlet & Violet",
+    "printedTotal": 358,
+    "total": 358,
+    "releaseDate": "2023/12/01"
+  },
+  {
+    "id": "sv4",
+    "name": "Ancient Roar",
+    "series": "Scarlet & Violet",
+    "printedTotal": 72,
+    "total": 72,
+    "releaseDate": "2023/10/27"
+  },
+  {
+    "id": "sv4m",
+    "name": "Future Flash",
+    "series": "Scarlet & Violet",
+    "printedTotal": 66,
+    "total": 66,
+    "releaseDate": "2023/10/27"
+  },
+  {
+    "id": "sv3a",
+    "name": "Raging Surf",
+    "series": "Scarlet & Violet",
+    "printedTotal": 62,
+    "total": 62,
+    "releaseDate": "2023/09/22"
+  },
+  {
+    "id": "sv3",
+    "name": "Ruler of the Black Flame",
+    "series": "Scarlet & Violet",
+    "printedTotal": 108,
+    "total": 108,
+    "releaseDate": "2023/07/28"
+  },
+  {
+    "id": "sv2a",
+    "name": "Pokemon Card 151",
+    "series": "Scarlet & Violet",
+    "printedTotal": 165,
+    "total": 165,
+    "releaseDate": "2023/06/16"
+  },
+  {
+    "id": "sv2",
+    "name": "Snow Hazard",
+    "series": "Scarlet & Violet",
+    "printedTotal": 71,
+    "total": 71,
+    "releaseDate": "2023/04/14"
+  },
+  {
+    "id": "sv2m",
+    "name": "Clay Burst",
+    "series": "Scarlet & Violet",
+    "printedTotal": 71,
+    "total": 71,
+    "releaseDate": "2023/04/14"
+  },
+  {
+    "id": "sv1a",
+    "name": "Triplet Beat",
+    "series": "Scarlet & Violet",
+    "printedTotal": 73,
+    "total": 73,
+    "releaseDate": "2023/03/10"
+  },
+  {
+    "id": "sv1",
+    "name": "Scarlet ex",
+    "series": "Scarlet & Violet",
+    "printedTotal": 78,
+    "total": 78,
+    "releaseDate": "2023/01/20"
+  },
+  {
+    "id": "sv1m",
+    "name": "Violet ex",
+    "series": "Scarlet & Violet",
+    "printedTotal": 78,
+    "total": 78,
+    "releaseDate": "2023/01/20"
+  },
+  {
+    "id": "s12a",
+    "name": "VSTAR Universe",
+    "series": "Sword & Shield",
+    "printedTotal": 172,
+    "total": 172,
+    "releaseDate": "2022/12/02"
+  },
+  {
+    "id": "s12",
+    "name": "Paradigm Trigger",
+    "series": "Sword & Shield",
+    "printedTotal": 98,
+    "total": 98,
+    "releaseDate": "2022/10/21"
+  },
+  {
+    "id": "s11a",
+    "name": "Incandescent Arcana",
+    "series": "Sword & Shield",
+    "printedTotal": 68,
+    "total": 68,
+    "releaseDate": "2022/09/02"
+  },
+  {
+    "id": "s11",
+    "name": "Lost Abyss",
+    "series": "Sword & Shield",
+    "printedTotal": 100,
+    "total": 100,
+    "releaseDate": "2022/07/15"
+  },
+  {
+    "id": "s10a",
+    "name": "Dark Phantasma",
+    "series": "Sword & Shield",
+    "printedTotal": 71,
+    "total": 71,
+    "releaseDate": "2022/05/13"
+  },
+  {
+    "id": "s10",
+    "name": "Time Gazer",
+    "series": "Sword & Shield",
+    "printedTotal": 67,
+    "total": 67,
+    "releaseDate": "2022/04/08"
+  },
+  {
+    "id": "s10m",
+    "name": "Space Juggler",
+    "series": "Sword & Shield",
+    "printedTotal": 67,
+    "total": 67,
+    "releaseDate": "2022/04/08"
+  },
+  {
+    "id": "s9a",
+    "name": "Battle Region",
+    "series": "Sword & Shield",
+    "printedTotal": 67,
+    "total": 67,
+    "releaseDate": "2022/02/25"
+  },
+  {
+    "id": "s9",
+    "name": "Star Birth",
+    "series": "Sword & Shield",
+    "printedTotal": 100,
+    "total": 100,
+    "releaseDate": "2022/01/14"
+  },
+  {
+    "id": "s8a",
+    "name": "25th Anniversary Collection",
+    "series": "Sword & Shield",
+    "printedTotal": 28,
+    "total": 28,
+    "releaseDate": "2021/10/22"
+  },
+  {
+    "id": "s8b",
+    "name": "VMAX Climax",
+    "series": "Sword & Shield",
+    "printedTotal": 184,
+    "total": 184,
+    "releaseDate": "2021/12/03"
+  }
+]

@@ -103,7 +103,7 @@ export async function executeTool(name: string, args: Record<string, any>): Prom
         where,
         include: {
           set: { select: { name: true } },
-          prices: { take: 1 },
+          prices: { where: { source: 'tcgplayer' }, take: 1 },
         },
         take: args.limit || 10,
       })
@@ -129,12 +129,21 @@ export async function executeTool(name: string, args: Record<string, any>): Prom
 
       if (!card) return { error: 'Card not found' }
 
+      const tcgPrices = card.prices.filter(p => p.source === 'tcgplayer')
+      const ebayPrices = card.prices.filter(p => p.source === 'ebay')
+
       return {
         card: card.name,
         set: card.set.name,
-        prices: card.prices.map(p => ({
+        tcgplayer_prices: tcgPrices.map(p => ({
           variant: p.variant,
           market: p.market ? `$${p.market.toFixed(2)}` : 'N/A',
+          low: p.low ? `$${p.low.toFixed(2)}` : 'N/A',
+          high: p.high ? `$${p.high.toFixed(2)}` : 'N/A',
+        })),
+        ebay_prices: ebayPrices.map(p => ({
+          variant: p.variant,
+          avg: p.market ? `$${p.market.toFixed(2)}` : 'N/A',
           low: p.low ? `$${p.low.toFixed(2)}` : 'N/A',
           high: p.high ? `$${p.high.toFixed(2)}` : 'N/A',
         })),
@@ -142,6 +151,7 @@ export async function executeTool(name: string, args: Record<string, any>): Prom
           company: gp.gradingCompany,
           grade: gp.grade,
           price: gp.price ? `$${gp.price.toFixed(2)}` : 'N/A',
+          source: gp.source || 'market',
         })),
       }
     }
@@ -151,7 +161,7 @@ export async function executeTool(name: string, args: Record<string, any>): Prom
         where: { userId: args.user_id },
         include: {
           card: {
-            include: { prices: true },
+            include: { prices: { where: { source: 'tcgplayer' } } },
           },
         },
       })
@@ -176,7 +186,7 @@ export async function executeTool(name: string, args: Record<string, any>): Prom
     case 'get_trending_cards': {
       const orderBy = args.sort_by === 'updated_at' ? { updatedAt: 'desc' as const } : { market: 'desc' as const }
       const data = await prisma.cardPrice.findMany({
-        where: { market: { not: null } },
+        where: { source: 'tcgplayer', market: { not: null } },
         orderBy,
         take: args.limit || 10,
         include: {
@@ -198,7 +208,7 @@ export async function executeTool(name: string, args: Record<string, any>): Prom
     case 'get_grading_recommendation': {
       const card = await prisma.card.findUnique({
         where: { id: args.card_id },
-        include: { prices: true, gradedPrices: true },
+        include: { prices: { where: { source: 'tcgplayer' } }, gradedPrices: true },
       })
 
       if (!card) return { error: 'Card not found' }

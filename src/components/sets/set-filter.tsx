@@ -8,9 +8,10 @@ interface SetFilterProps {
   seriesList: string[]
   currentSeries?: string
   currentQuery?: string
+  currentLang?: string
 }
 
-export function SetFilter({ seriesList, currentSeries, currentQuery }: SetFilterProps) {
+export function SetFilter({ seriesList, currentSeries, currentQuery, currentLang }: SetFilterProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
@@ -18,6 +19,8 @@ export function SetFilter({ seriesList, currentSeries, currentQuery }: SetFilter
 
   function updateFilters(key: string, value: string) {
     const params = new URLSearchParams()
+    // Always preserve lang from tabs
+    if (currentLang) params.set('lang', currentLang)
     if (key === 'series' && value && value !== 'all') params.set('series', value)
     else if (key !== 'series' && currentSeries) params.set('series', currentSeries)
     if (key === 'q' && value) params.set('q', value)

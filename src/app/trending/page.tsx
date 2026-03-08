@@ -33,30 +33,30 @@ export default async function TrendingPage() {
     cheapestCard,
   ] = await Promise.all([
     prisma.cardPrice.findMany({
-      where: { market: { not: null } },
+      where: { source: 'tcgplayer', market: { not: null } },
       orderBy: { market: 'desc' },
       take: 20,
       include: { card: { include: { set: { select: { name: true } } } } },
     }),
     prisma.cardPrice.findMany({
-      where: { market: { not: null } },
+      where: { source: 'tcgplayer', market: { not: null } },
       orderBy: { updatedAt: 'desc' },
       take: 20,
       include: { card: { include: { set: { select: { name: true } } } } },
     }),
     prisma.cardPrice.count({
-      where: { market: { not: null } },
+      where: { source: 'tcgplayer', market: { not: null } },
     }),
     prisma.cardPrice.aggregate({
-      where: { market: { not: null } },
+      where: { source: 'tcgplayer', market: { not: null } },
       _avg: { market: true },
     }),
     prisma.cardPrice.count({
-      where: { updatedAt: { gte: new Date(Date.now() - 86400000) } },
+      where: { source: 'tcgplayer', updatedAt: { gte: new Date(Date.now() - 86400000) } },
     }),
     prisma.cardPrice.groupBy({
       by: ['cardId'],
-      where: { market: { not: null } },
+      where: { source: 'tcgplayer', market: { not: null } },
       _count: { cardId: true },
     }).then(async (groups) => {
       const cardIds = groups.map((g) => g.cardId)
@@ -73,7 +73,7 @@ export default async function TrendingPage() {
       return top ? { name: top[0], count: top[1] } : null
     }),
     prisma.cardPrice.findFirst({
-      where: { market: { not: null, gt: 0 } },
+      where: { source: 'tcgplayer', market: { not: null, gt: 0 } },
       orderBy: { market: 'asc' },
       include: { card: true },
     }),
