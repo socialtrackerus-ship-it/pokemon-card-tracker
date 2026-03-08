@@ -146,9 +146,9 @@ async function main() {
               hp: card.hp,
               types: card.types,
               rarity: card.rarity,
-              // Use the English card images (same artwork)
-              imageSmall: card.imageSmall,
-              imageLarge: card.imageLarge,
+              // Non-English cards have different artwork — leave blank until sourced
+              imageSmall: '',
+              imageLarge: '',
               number: card.number,
               artist: card.artist,
               tcgplayerUrl: null, // Non-English cards don't have TCGPlayer listings
@@ -164,32 +164,8 @@ async function main() {
     console.log(`  Cloned ${cardsToClone.length} cards`)
   }
 
-  // Also update non-English set logos/symbols from their English equivalents
-  console.log(`\nUpdating set images from English equivalents...`)
-  let imagesUpdated = 0
-  for (const set of intlSets) {
-    const englishSetId = SET_MAPPING[set.id]
-    if (!englishSetId) continue
-
-    const englishSet = await prisma.set.findUnique({
-      where: { id: englishSetId },
-      select: { logoUrl: true, symbolUrl: true },
-    })
-    if (!englishSet?.logoUrl) continue
-
-    await prisma.set.update({
-      where: { id: set.id },
-      data: {
-        logoUrl: englishSet.logoUrl,
-        symbolUrl: englishSet.symbolUrl,
-      },
-    })
-    imagesUpdated++
-  }
-
   console.log(`\nDone!`)
   console.log(`  Cards cloned: ${totalCloned}`)
-  console.log(`  Set images updated: ${imagesUpdated}`)
   console.log(`  Skipped (already have cards): ${skippedExisting}`)
   console.log(`  Skipped (no English mapping): ${skippedNoMapping}`)
   await prisma.$disconnect()

@@ -34,16 +34,29 @@ export function CardThumbnail({ card }: CardThumbnailProps) {
       <div className="card-frame hover-lift">
         {/* Image Area */}
         <div className="relative aspect-[245/342] overflow-hidden rounded-t-[inherit]">
-          <div className="zoom-container w-full h-full">
-            <Image
-              src={card.image_small}
-              alt={card.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-              loading="lazy"
-            />
-          </div>
+          {card.image_small ? (
+            <div className="zoom-container w-full h-full">
+              <Image
+                src={card.image_small}
+                alt={card.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[var(--surface-2)]">
+              <div className="text-center px-3">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-[var(--text-tertiary)]">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+                <p className="text-[10px] text-[var(--text-tertiary)] mt-1.5 leading-tight">{card.name}</p>
+              </div>
+            </div>
+          )}
 
           {/* Price Overlay */}
           {marketPrice != null && marketPrice > 0 && (
