@@ -1,8 +1,12 @@
 /**
  * Sync TCGPlayer prices for all English cards from the Pokemon TCG API.
  *
- * This is faster than re-seeding cards because it only fetches and updates prices.
- * Usage: npx tsx scripts/sync-tcgplayer-prices.ts [--set <setId>]
+ * The API is often flaky (504s, timeouts), so this script retries aggressively
+ * and continues past failures, resuming where it left off on re-run.
+ *
+ * Usage:
+ *   npx tsx scripts/sync-tcgplayer-prices.ts          # all sets
+ *   npx tsx scripts/sync-tcgplayer-prices.ts --set base1  # single set
  */
 
 import 'dotenv/config'
@@ -20,14 +24,14 @@ function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(30000) })
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(60000) })
       if (res.ok) return res
       if (res.status === 429 || res.status === 504 || res.status === 503) {
-        const waitTime = (i + 1) * 5000
-        console.log(`  Retryable error (${res.status}), waiting ${waitTime / 1000}s...`)
+        const waitTime = (i + 1) * 8000
+        console.log(`\n    Retryable ${res.status}, waiting ${waitTime / 1000}s...`)
         await delay(waitTime)
         continue
       }
@@ -35,7 +39,9 @@ async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
     } catch (err: any) {
       if (err.message?.startsWith('HTTP')) throw err
       if (i === retries - 1) throw err
-      await delay((i + 1) * 3000)
+      const waitTime = (i + 1) * 5000
+      console.log(`\n    ${err.message}, retry ${i + 1}/${retries} in ${waitTime / 1000}s...`)
+      await delay(waitTime)
     }
   }
   throw new Error('Max retries exceeded')
@@ -50,9 +56,10 @@ async function syncSetPrices(setId: string): Promise<{ updated: number; errors: 
   while (hasMore) {
     try {
       const res = await fetchWithRetry(
-        `${API_BASE}/cards?q=set.id:${setId}&pageSize=250&page=${page}&select=id,tcgplayer`
+        `${API_BASE}/cards?q=set.id:${setId}&pageSize=250&page=${page}`
       )
       const data = await res.json()
+      if (!data.data || data.data.length === 0) break
 
       const ops: any[] = []
       for (const card of data.data) {
@@ -85,18 +92,16 @@ async function syncSetPrices(setId: string): Promise<{ updated: number; errors: 
       }
 
       if (ops.length > 0) {
-        // Batch in groups of 50
         for (let i = 0; i < ops.length; i += 50) {
           await prisma.$transaction(ops.slice(i, i + 50))
         }
         updated += ops.length
       }
 
-      hasMore = (data.data.length + (page - 1) * 250) < data.totalCount
+      hasMore = data.data.length === 250 && (page * 250) < (data.totalCount || Infinity)
       page++
-      if (hasMore) await delay(1500)
+      if (hasMore) await delay(2000)
     } catch (err: any) {
-      console.error(`  Error on page ${page}: ${err.message}`)
       errors++
       break
     }
@@ -106,21 +111,6 @@ async function syncSetPrices(setId: string): Promise<{ updated: number; errors: 
 }
 
 async function main() {
-  // Check API availability with generous timeout
-  try {
-    const res = await fetchWithRetry(`${API_BASE}/sets?pageSize=1`)
-    if (!res.ok) {
-      console.error(`Pokemon TCG API unavailable (HTTP ${res.status}). Try again later.`)
-      process.exit(1)
-    }
-  } catch (err: any) {
-    console.error(`Pokemon TCG API unreachable: ${err.message}. Try again later.`)
-    process.exit(1)
-  }
-
-  console.log('Pokemon TCG API is available. Starting price sync...\n')
-
-  // Determine which sets to sync
   const targetSetId = process.argv.includes('--set')
     ? process.argv[process.argv.indexOf('--set') + 1]
     : null
@@ -135,20 +125,47 @@ async function main() {
     }
     sets = [set]
   } else {
-    // Get all English sets that have cards
+    // Get EN sets that have cards, prioritize those missing prices
     const setsWithCards = await prisma.card.groupBy({ by: ['setId'], _count: true })
     const setIds = setsWithCards.map(s => s.setId)
-    sets = await prisma.set.findMany({
+
+    const allSets = await prisma.set.findMany({
       where: { id: { in: setIds }, language: 'en' },
       orderBy: { releaseDate: 'desc' },
       select: { id: true, name: true },
     })
+
+    // Check which sets are missing prices, put them first
+    const withPrices = new Set<string>()
+    const priceCheck = await prisma.cardPrice.groupBy({
+      by: ['cardId'],
+      where: { source: 'tcgplayer' },
+      _count: true,
+    })
+    const cardToSet = new Map(setsWithCards.flatMap(s =>
+      Array.from({ length: s._count }, () => [s.setId, s.setId])
+    ))
+    // Simpler: just check count per set
+    for (const s of allSets) {
+      const pCount = await prisma.cardPrice.count({
+        where: { card: { setId: s.id }, source: 'tcgplayer' },
+        take: 1,
+      })
+      if (pCount > 0) withPrices.add(s.id)
+    }
+
+    const noPriceSets = allSets.filter(s => !withPrices.has(s.id))
+    const hasPriceSets = allSets.filter(s => withPrices.has(s.id))
+    sets = [...noPriceSets, ...hasPriceSets]
+
+    console.log(`${noPriceSets.length} sets missing prices (priority), ${hasPriceSets.length} sets to refresh`)
   }
 
   console.log(`Syncing prices for ${sets.length} sets...\n`)
 
   let totalUpdated = 0
   let totalErrors = 0
+  let consecutive504s = 0
 
   for (let i = 0; i < sets.length; i++) {
     const set = sets[i]
@@ -158,8 +175,20 @@ async function main() {
     totalUpdated += updated
     totalErrors += errors
 
-    console.log(`${updated} prices${errors ? `, ${errors} errors` : ''}`)
-    await delay(1000)
+    if (errors > 0) {
+      consecutive504s++
+      console.log(`FAILED`)
+      if (consecutive504s >= 5) {
+        console.log(`\n5 consecutive failures — API appears down. Stopping.`)
+        console.log(`Re-run this script later to continue from where it left off.`)
+        break
+      }
+      await delay(10000)
+    } else {
+      consecutive504s = 0
+      console.log(`${updated} prices`)
+      await delay(1500)
+    }
   }
 
   console.log(`\nDone! Updated ${totalUpdated} price records, ${totalErrors} errors`)
