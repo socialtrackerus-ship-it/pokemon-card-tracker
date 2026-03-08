@@ -2,7 +2,6 @@
 
 import { Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 
 interface PaginationProps {
   currentPage: number
@@ -22,39 +21,63 @@ function PaginationInner({ currentPage, totalPages }: PaginationProps) {
     router.push(`${pathname}?${params.toString()}`)
   }
 
+  // Generate page numbers to show
+  const pages: (number | 'ellipsis')[] = []
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    if (currentPage > 3) pages.push('ellipsis')
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+      pages.push(i)
+    }
+    if (currentPage < totalPages - 2) pages.push('ellipsis')
+    pages.push(totalPages)
+  }
+
   return (
-    <div className="flex items-center justify-center gap-3 mt-10">
-      <Button
-        variant="outline"
-        size="sm"
+    <div className="flex items-center justify-center gap-1.5 mt-10">
+      <button
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30"
+        className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1] disabled:opacity-20 disabled:pointer-events-none transition-all text-muted-foreground"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M15 18l-6-6 6-6" />
         </svg>
-        Previous
-      </Button>
+      </button>
 
-      <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-        <span className="text-sm font-medium text-foreground">{currentPage}</span>
-        <span className="text-xs text-muted-foreground/50 mx-1">/</span>
-        <span className="text-sm text-muted-foreground">{totalPages}</span>
-      </div>
+      {pages.map((page, i) =>
+        page === 'ellipsis' ? (
+          <span key={`e-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-muted-foreground/30">
+            ...
+          </span>
+        ) : (
+          <button
+            key={page}
+            onClick={() => goToPage(page)}
+            className={`
+              w-8 h-8 rounded-lg text-xs font-medium transition-all
+              ${page === currentPage
+                ? 'bg-gradient-to-r from-[var(--holo-purple)] to-[var(--holo-blue)] text-white shadow-[0_0_12px_oklch(0.6_0.2_280_/_15%)]'
+                : 'border border-white/[0.06] bg-white/[0.02] text-muted-foreground hover:bg-white/[0.05] hover:border-white/[0.1]'
+              }
+            `}
+          >
+            {page}
+          </button>
+        )
+      )}
 
-      <Button
-        variant="outline"
-        size="sm"
+      <button
         onClick={() => goToPage(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30"
+        className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1] disabled:opacity-20 disabled:pointer-events-none transition-all text-muted-foreground"
       >
-        Next
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-1">
-          <path d="M5 12h14M12 5l7 7-7 7" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 18l6-6-6-6" />
         </svg>
-      </Button>
+      </button>
     </div>
   )
 }
