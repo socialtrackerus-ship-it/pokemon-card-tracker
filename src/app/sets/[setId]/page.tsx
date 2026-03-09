@@ -120,11 +120,11 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
   const [cardsRaw, count, chaseCards, sealedProducts] = await Promise.all([
     prisma.card.findMany({
       where: { id: { in: pageCardIds } },
-      include: { prices: { where: { source: 'tcgplayer' } } },
+      include: { prices: true },
     }),
     prisma.card.count({ where: { setId } }),
     prisma.cardPrice.findMany({
-      where: { card: { setId }, source: 'tcgplayer', market: { not: null } },
+      where: { card: { setId }, market: { not: null } },
       orderBy: { market: 'desc' },
       take: 3,
       include: { card: true },
@@ -161,6 +161,7 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
     card_prices: c.prices.map((p) => ({
       variant: p.variant,
       market: p.market,
+      source: p.source,
     })),
   }))
 

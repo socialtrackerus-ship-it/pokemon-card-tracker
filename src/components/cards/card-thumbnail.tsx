@@ -7,7 +7,7 @@ interface CardThumbnailProps {
     name: string
     image_small: string
     rarity?: string | null
-    card_prices?: { market: number | null; variant: string }[]
+    card_prices?: { market: number | null; variant: string; source?: string }[]
   }
 }
 
@@ -23,10 +23,16 @@ function getRarityClass(rarity: string | null | undefined): string {
 }
 
 export function CardThumbnail({ card }: CardThumbnailProps) {
-  const mainPrice = card.card_prices?.find(
-    (p) => p.variant === 'holofoil' || p.variant === 'normal'
+  // Prefer TCGPlayer price, fall back to Cardmarket
+  const tcgPrice = card.card_prices?.find(
+    (p) => (p.variant === 'holofoil' || p.variant === 'normal') && p.source !== 'cardmarket'
   )
+  const cmPrice = card.card_prices?.find(
+    (p) => p.source === 'cardmarket' && p.market != null
+  )
+  const mainPrice = tcgPrice || cmPrice
   const marketPrice = mainPrice?.market
+  const isEur = mainPrice === cmPrice && !tcgPrice
   const rarityClass = getRarityClass(card.rarity)
 
   return (
@@ -68,7 +74,7 @@ export function CardThumbnail({ card }: CardThumbnailProps) {
                 border: '1px solid oklch(0.75 0.15 85 / 20%)',
               }}
             >
-              ${marketPrice.toFixed(2)}
+              {isEur ? '€' : '$'}{marketPrice.toFixed(2)}
             </div>
           )}
         </div>

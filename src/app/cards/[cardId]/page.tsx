@@ -72,6 +72,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
 
   // Separate prices by source
   const tcgPrices = card.prices.filter(p => p.source === 'tcgplayer')
+  const cardmarketPrices = card.prices.filter(p => p.source === 'cardmarket')
   const ebayPrices = card.prices.filter(p => p.source === 'ebay')
   const prices = card.prices
   const attacks = (card.attacks || []) as unknown as Attack[]
@@ -105,16 +106,30 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           <div className="sticky top-20 space-y-5">
             {/* Card Image */}
             <div className="card-frame-featured">
-              <div className="zoom-container">
-                <Image
-                  src={card.imageLarge}
-                  alt={card.name}
-                  width={420}
-                  height={586}
-                  className="w-full h-auto rounded-lg"
-                  priority
-                />
-              </div>
+              {card.imageLarge ? (
+                <div className="zoom-container">
+                  <Image
+                    src={card.imageLarge}
+                    alt={card.name}
+                    width={420}
+                    height={586}
+                    className="w-full h-auto rounded-lg"
+                    priority
+                  />
+                </div>
+              ) : (
+                <div className="w-full aspect-[245/342] flex items-center justify-center bg-[var(--surface-2)] rounded-lg">
+                  <div className="text-center px-6">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-[var(--text-tertiary)]">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-5-5L5 21" />
+                    </svg>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-3">{card.name}</p>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-1">Image not available</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Quick Stats */}
@@ -251,6 +266,50 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                           </td>
                           <td className="px-4 py-3 text-right text-value font-semibold gold-text text-[13px]">
                             {p.market ? `$${p.market.toFixed(2)}` : '\u2014'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ===== CARDMARKET PRICES ===== */}
+          {cardmarketPrices.length > 0 && (
+            <section className="panel animate-in">
+              <div className="panel-header">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-[14px] font-semibold tracking-tight">Cardmarket Prices</h2>
+                    <span className="chip text-[10px]">EUR</span>
+                  </div>
+                </div>
+              </div>
+              <div className="panel-body-flush">
+                <div className="overflow-x-auto">
+                  <table className="w-full table-premium table-striped">
+                    <thead>
+                      <tr>
+                        <th className="text-left px-4 py-3 text-[11px]">Variant</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Low</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Avg</th>
+                        <th className="text-right px-4 py-3 text-[11px]">Trend</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cardmarketPrices.map((p) => (
+                        <tr key={`cm-${p.variant}`}>
+                          <td className="px-4 py-3 font-medium capitalize text-[13px]">{p.variant}</td>
+                          <td className="px-4 py-3 text-right text-value text-[var(--text-tertiary)] text-[13px]">
+                            {p.low ? `€${p.low.toFixed(2)}` : '\u2014'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-value text-[var(--text-secondary)] text-[13px]">
+                            {p.mid ? `€${p.mid.toFixed(2)}` : '\u2014'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-value font-semibold gold-text text-[13px]">
+                            {p.market ? `€${p.market.toFixed(2)}` : '\u2014'}
                           </td>
                         </tr>
                       ))}
